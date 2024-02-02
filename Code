@@ -1,0 +1,89 @@
+import os
+import matplotlib.pyplot as plt
+import pygame  # Import the pygame library
+
+# Initialize pygame mixer
+pygame.mixer.init()
+
+# Function to play the alarm sound for a specific duration
+def play_alarm_sound(duration_seconds):
+    pygame.mixer.music.load("Alarm-Fast-High-Pitch-A1-www.fesliyanstudios.com.mp3")  # Replace "alarm_sound.mp3" with your alarm sound file
+    pygame.mixer.music.play()
+    pygame.time.delay(duration_seconds * 1000)  # Delay in milliseconds
+    pygame.mixer.music.stop()
+
+# Get user input for the number of showers and consumption limit
+num_showers = int(input("Enter the number of showers to monitor: "))
+consumption_limit = float(input("Enter the consumption limit (gallons): "))
+
+# Lists to store water consumption and labels for each shower
+consumptions = []
+labels = []
+
+# Monitoring loop for each shower
+for shower in range(1, num_showers + 1):
+    print(f"Shower {shower}")
+    flow_rate = float(input(f"Enter the water flow rate of your showerhead (gallons per minute) for Shower {shower}: "))
+    shower_duration = float(input(f"Enter the duration of your shower (minutes) for Shower {shower}: "))
+
+    # Calculate water consumption for the current shower
+    water_consumption = flow_rate * shower_duration
+
+    # Append the consumption and label to the lists
+    consumptions.append(water_consumption)
+    labels.append(f"Shower {shower}")
+
+    # Visualize the water consumption for the current shower
+    remaining_limit = max(consumption_limit - water_consumption, 0)
+    
+    labels_pie = ["Water Consumed", "Remaining Limit"] if water_consumption <= consumption_limit else ["Water Consumed", "Exceeded Limit"]
+    colors_pie = ['blue', 'red'] if water_consumption <= consumption_limit else ['blue', 'red']
+
+    plt.figure(figsize=(6, 6))
+    plt.pie([water_consumption, remaining_limit],
+            labels=labels_pie,
+            autopct='%1.1f%%',
+            colors=colors_pie)
+    plt.title(f"Water Consumption during Shower {shower}")
+    plt.show()
+
+    # Check if water consumption exceeds the limit
+    if water_consumption > consumption_limit:
+        print(f"High water consumption detected for Shower {shower}! You consumed {water_consumption} gallons.")
+        play_alarm_sound(5)  # Play alarm sound for 5 seconds when the limit is exceeded
+    else:
+        print(f"Water consumption for Shower {shower}: {water_consumption} gallons. You are within the limit.")
+
+# Create a bar chart to visualize all the water consumption data
+plt.figure(figsize=(10, 6))
+plt.bar(labels, consumptions, color=['blue' if c <= consumption_limit else 'red' for c in consumptions])
+plt.axhline(y=consumption_limit, color='gray', linestyle='--', label='Consumption Limit')
+plt.xlabel('Showers')
+plt.ylabel('Water Consumption (gallons)')
+plt.title('Water Consumption during Showers')
+plt.legend()
+
+# Show the merged graph of remaining water after adding up all consumptions
+total_consumption = sum(consumptions)
+remaining_water = max(consumption_limit - total_consumption, 0)
+
+# Append the total consumption and label for the merged graph
+consumptions.append(total_consumption)
+labels.append("Total Consumption")
+
+# Plot the merged graph
+plt.figure(figsize=(6, 6))
+plt.pie([total_consumption, remaining_water],
+        labels=["Total Consumption", "Remaining Limit"],
+        autopct='%1.1f%%',
+        colors=['blue', 'red'] if total_consumption <= consumption_limit else ['red', 'blue'])
+plt.title("Merged Water Consumption")
+plt.show()
+
+# Find the showers that exceeded the consumption limit
+exceeded_limit_showers = [shower for shower, consumption in enumerate(consumptions[:-1], start=1) if consumption > consumption_limit]
+
+if exceeded_limit_showers:
+    print(f"Showers {', '.join(map(str, exceeded_limit_showers))} exceeded the consumption limit of {consumption_limit} gallons. Warning generated.")
+else:
+    print("All showers were within the consumption limit.")
